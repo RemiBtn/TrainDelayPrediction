@@ -1,6 +1,26 @@
 # ML project
 
+Nous nous plaçons dans le contexte où la SNCF souhaite évaluer un planning des trains (pour les 6 mois à venir par exemple). Nous considérons donc seulement les variables qui caractérisent les liaisons, et cherchons à prédire le retard à l'arrivée (et potentiellement le retard au départ). Les variables prises en compte sont donc :
+- date
+- service
+- gare_depart
+- gare_arrivee
+- duree_moyenne
+- nb_train_prevu
+Les variables à prédire sont :
+- retard_moyen_arrivee / retard_moyen_tous_trains_arrivee, lequel ?
+- prct_cause_externe
+- prct_cause_infra
+- prct_cause_gestion_trafic
+- prct_cause_materiel_roulant
+- prct_cause_gestion_gare
+- prct_cause_prise_en_charge_voyageurs
+Et en option :
+- retard_moyen_depart / retard_moyen_tous_trains_depart
 
+Cela ne laisse pas beaucoup de variables pour la prédiction, mais nous pourrions potentiellement utiliser d'autres données (météo? Le problème est qu'il faut prédire la météo de dans 6 mois.)
+
+Cela ne laisse pas beaucoup 
 
 ## Getting started
 
