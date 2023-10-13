@@ -7,6 +7,10 @@ Nous nous plaçons dans le contexte où la SNCF souhaite évaluer un planning de
 - gare_arrivee
 - duree_moyenne
 - nb_train_prevu
+- nb_annulation au mois n-1 ?
+- commentaire_annulation au mois n-1 ?
+- nb_train_depart_retard au mois n-1 ?
+- ...
 Les variables à prédire sont :
 - retard_moyen_arrivee / retard_moyen_tous_trains_arrivee, lequel ?
 - prct_cause_externe
@@ -19,8 +23,9 @@ Et en option :
 - retard_moyen_depart / retard_moyen_tous_trains_depart
 
 Cela ne laisse pas beaucoup de variables pour la prédiction, mais nous pourrions potentiellement utiliser d'autres données (météo? Le problème est qu'il faut prédire la météo de dans 6 mois.)
+Aller chercher des données sur la qualité des gares / rails entre les gares. Grèves qui ont lieu ? Mais n'a pas de sens dans notre contexte car on ne peut pas vraiment savoir les grèves dans le futur.
 
-Cela ne laisse pas beaucoup 
+Il y a également le problème des données du Covid, où les données ne sont pas comparables aux autres années.
 
 ## Getting started
 
