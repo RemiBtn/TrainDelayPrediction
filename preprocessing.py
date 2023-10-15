@@ -1,7 +1,16 @@
 import pandas as pd
 import numpy as np
+
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OrdinalEncoder
+from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import ExtraTreesRegressor
+from sklearn.metrics import mean_squared_error
+
 
 # Fixing randomness to get reproducible results
 random_seed = 0
@@ -34,6 +43,45 @@ y_causes = data[target_columns[1:]]
 # Focus on delay for now
 X_train, X_test, y_train, y_test = train_test_split(X, y_delay, test_size=0.2)
 
-# Quick test with extremely randomized trees (no need for preprocessing)
+# Numerical features
+numeric_features = [
+    'duree_moyenne',
+    'nb_train_prevu'
+]
+num_pipeline = Pipeline([
+    ('std_scaler', StandardScaler())
+])
+
+# Categorical features
+categorical_features = [
+    'service',
+    'gare_depart',
+    'gare_arrivee'
+]
+
+# Create and apply the preprocessing pipeline
+
+data_transformer = ColumnTransformer([
+    ('numerical', num_pipeline, numeric_features),
+    ('date', OrdinalEncoder(), ['date']),
+    ('categorical', OneHotEncoder(), categorical_features)
+])
+
+X_train = data_transformer.fit_transform(X_train)
+X_test = data_transformer.transform(X_test)
+
+
+# Quick test with linear regression
+reg = LinearRegression()
+reg.fit(X_train, y_train)
+y_test_pred = reg.predict(X_test)
+rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+print(rmse_test)
+
+
+# Quick test with extremely randomized trees
 reg = ExtraTreesRegressor(n_estimators=100).fit(X_train, y_train)
-reg.score(X_test, y_test)
+reg.fit(X_train, y_train)
+y_test_pred = reg.predict(X_test)
+rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+print(rmse_test)
