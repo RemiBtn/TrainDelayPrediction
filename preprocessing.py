@@ -8,6 +8,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler
+from sklearn.tree import DecisionTreeRegressor, plot_tree
 
 # Fixing randomness to get reproducible results
 random_seed = 0
@@ -101,4 +102,13 @@ plt.barh(top_10_coefficients["feature_name"], top_10_coefficients["coef"])
 plt.xlabel("Coefficient")
 plt.ylabel("Feature")
 plt.title("Top 10 Features by Coefficient Magnitude")
+plt.show()
+
+
+# Train and plot a decision tree
+tree = DecisionTreeRegressor(random_state=random_seed)
+tree.fit(X_train, y_train)
+
+plt.figure(figsize=(15, 10))
+plot_tree(tree, feature_names=all_feature_names, filled=True, max_depth=3)
 plt.show()
