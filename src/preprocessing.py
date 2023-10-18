@@ -1,22 +1,37 @@
 import os
+import random
 from typing import TypeAlias
 
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.compose import ColumnTransformer
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 # Fixing randomness to get reproducible results
 RANDOM_STATE = 42
+random.seed(RANDOM_STATE)
 np.random.seed(RANDOM_STATE)
 
 
 TransformedDataset: TypeAlias = tuple[
     csr_matrix, csr_matrix, csr_matrix, csr_matrix, csr_matrix, csr_matrix
 ]
+
+
+def split_months_train_test(
+    data_before_2023: pd.DataFrame,
+) -> tuple[set[str], set[str]]:
+    months_train = set(data_before_2023["date"].unique())
+    months_test = set()
+    for month in range(1, 13):
+        year = random.randrange(2018, 2023)
+        date = f"{year}-{month:02d}"
+        assert date == number_to_date(date_to_number(date))
+        months_train.remove(date)
+        months_test.add(date)
+    return months_train, months_test
 
 
 def split_explicative_target(
@@ -82,7 +97,7 @@ def number_to_date(x: float) -> str:
     december_22 = to_month_id(2022, 12)
     month_id = round((january_18 * (1 - x) + december_22 * (1 + x)) / 2)
     year, month = from_month_id(month_id)
-    return f"{year}-{month}"
+    return f"{year}-{month:02d}"
 
 
 def get_data_transformers(
@@ -131,6 +146,7 @@ def embedding(
     x_2023: pd.DataFrame,
     y_2023: pd.DataFrame,
     use_month: bool = True,
+    *,
     return_transformers: bool = False,
 ) -> (
     TransformedDataset
@@ -169,16 +185,12 @@ def load_data(
 
 
 def load_and_split_train_test(
-    one_hot_month: bool = True, test_size: float | int | None = 0.2
+    one_hot_month: bool = True,
 ) -> tuple[
     pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     data_before_2023, data_2023 = load_data(one_hot_month, True)
-    months_train, months_test = train_test_split(
-        data_before_2023["date"].unique(),
-        test_size=test_size,
-        random_state=RANDOM_STATE,
-    )
+    months_train, months_test = split_months_train_test(data_before_2023)
     data_train = data_before_2023[data_before_2023["date"].isin(months_train)]
     data_test = data_before_2023[data_before_2023["date"].isin(months_test)]
     x_train, y_train = split_explicative_target(data_train, one_hot_month)
@@ -188,15 +200,13 @@ def load_and_split_train_test(
 
 
 def load_and_process(
-    one_hot_month: bool = True,
-    test_size: float | int | None = 0.2,
-    return_transformers: bool = False,
+    one_hot_month: bool = True, *, return_transformers: bool = False
 ) -> (
     TransformedDataset
     | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]
 ):
     x_train, y_train, x_test, y_test, x_2023, y_2023 = load_and_split_train_test(
-        one_hot_month, test_size
+        one_hot_month
     )
     return embedding(
         x_train,
