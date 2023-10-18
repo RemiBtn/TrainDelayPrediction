@@ -10,8 +10,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 # Fixing randomness to get reproducible results
-random_seed = 42
-np.random.seed(random_seed)
+RANDOM_STATE = 42
+np.random.seed(RANDOM_STATE)
 
 
 TransformedDataset: TypeAlias = tuple[
@@ -174,13 +174,16 @@ def load_and_split_train_test(
     pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
 ]:
     data_before_2023, data_2023 = load_data(one_hot_month, True)
-    x_before_2023, y_before_2023 = split_explicative_target(
-        data_before_2023, one_hot_month
+    months_train, months_test = train_test_split(
+        data_before_2023["date"].unique(),
+        test_size=test_size,
+        random_state=RANDOM_STATE,
     )
+    data_train = data_before_2023[data_before_2023["date"].isin(months_train)]
+    data_test = data_before_2023[data_before_2023["date"].isin(months_test)]
+    x_train, y_train = split_explicative_target(data_train, one_hot_month)
+    x_test, y_test = split_explicative_target(data_test, one_hot_month)
     x_2023, y_2023 = split_explicative_target(data_2023, one_hot_month)
-    x_train, x_test, y_train, y_test = train_test_split(
-        x_before_2023, y_before_2023, test_size=test_size
-    )
     return x_train, y_train, x_test, y_test, x_2023, y_2023
 
 
