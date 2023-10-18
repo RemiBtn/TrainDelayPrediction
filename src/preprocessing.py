@@ -19,25 +19,6 @@ TransformedDataset: TypeAlias = tuple[
 ]
 
 
-def load_data(
-    add_month: bool = False, split_2023: bool = False
-) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
-    if os.path.exists("../data/regularite-mensuelle-tgv-aqst.csv"):
-        filepath = "../data/regularite-mensuelle-tgv-aqst.csv"
-    elif os.path.exists("./data/regularite-mensuelle-tgv-aqst.csv"):
-        filepath = "./data/regularite-mensuelle-tgv-aqst.csv"
-    else:
-        raise FileNotFoundError("Could not find `regularite-mensuelle-tgv-aqst.csv`.")
-    data = pd.read_csv(filepath, delimiter=";")
-    if add_month:
-        data["month"] = data.apply(lambda row: row["date"][-2:], axis=1)
-    if split_2023:
-        data_before_2023 = data[data["date"] < "2023-01"]
-        data_2023 = data[data["date"] >= "2023-01"]
-        return data_before_2023, data_2023
-    return data
-
-
 def split_explicative_target(
     data: pd.DataFrame, add_month: bool = True
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -65,16 +46,43 @@ def split_explicative_target(
     return explicative_variables, target_variables
 
 
+def to_month_id(year: int, month: int) -> int:
+    return (year - 1) * 12 + month - 1
+
+
+def from_month_id(month_id: int) -> tuple[int, int]:
+    q, r = divmod(month_id, 12)
+    year = q + 1
+    month = r + 1
+    return year, month
+
+
 @np.vectorize
-def date_to_number(date: str) -> int:
+def date_to_number(date: str) -> float:
+    """
+    Affine transform
+    2018-01 -> -1.0
+    2022-12 ->  1.0
+    """
     year, month = map(int, date.split("-"))
-    return 12 * (year - 2000) + month - 1
+    january_18 = to_month_id(2018, 1)
+    december_22 = to_month_id(2022, 12)
+    month_id = to_month_id(year, month)
+    return (2 * month_id - january_18 - december_22) / (december_22 - january_18)
 
 
 @np.vectorize
-def number_to_date(x: int | float) -> str:
-    year, month = divmod(round(x), 12)
-    return f"{year + 2000}-{month + 1}"
+def number_to_date(x: float) -> str:
+    """
+    Affine transform
+    -1.0 -> 2018-01
+    1.0 -> 2022-12
+    """
+    january_18 = to_month_id(2018, 1)
+    december_22 = to_month_id(2022, 12)
+    month_id = round((january_18 * (1 - x) + december_22 * (1 + x)) / 2)
+    year, month = from_month_id(month_id)
+    return f"{year}-{month}"
 
 
 def get_data_transformers(
@@ -95,9 +103,6 @@ def get_data_transformers(
     ]
     date_encoder = FunctionTransformer(
         date_to_number, number_to_date, check_inverse=False
-    )
-    date_encoder = Pipeline(
-        [("date_encoder", date_encoder), ("standard_scaler", StandardScaler())]
     )
     percentage_scaler = FunctionTransformer(
         lambda x: x / 100, lambda x: 100 * x, validate=True, accept_sparse=True
@@ -142,6 +147,25 @@ def embedding(
     if return_transformers:
         return transformed_dataset, (x_transformer, y_transformer)
     return transformed_dataset
+
+
+def load_data(
+    add_month: bool = False, split_2023: bool = False
+) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
+    if os.path.exists("../data/regularite-mensuelle-tgv-aqst.csv"):
+        filepath = "../data/regularite-mensuelle-tgv-aqst.csv"
+    elif os.path.exists("./data/regularite-mensuelle-tgv-aqst.csv"):
+        filepath = "./data/regularite-mensuelle-tgv-aqst.csv"
+    else:
+        raise FileNotFoundError('Could not find "regularite-mensuelle-tgv-aqst.csv".')
+    data = pd.read_csv(filepath, delimiter=";")
+    if add_month:
+        data["month"] = data.apply(lambda row: row["date"][-2:], axis=1)
+    if split_2023:
+        data_before_2023 = data[data["date"] < "2023-01"]
+        data_2023 = data[data["date"] >= "2023-01"]
+        return data_before_2023, data_2023
+    return data
 
 
 def load_and_split_train_test(
