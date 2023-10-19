@@ -7,10 +7,11 @@ from sklearn.ensemble import (
     ExtraTreesRegressor,
     RandomForestRegressor,
 )
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso, LinearRegression, Ridge
 from sklearn.metrics import mean_squared_error
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 
 
@@ -19,9 +20,16 @@ def main() -> None:
 
     # Define the parameter grids
     linear_reg_params = {"fit_intercept": [True, False]}
+    ridge_params = {"alpha": [0.1, 1.0, 10.0]}
+    lasso_params = {"alpha": [0.1, 1.0, 10.0]}
     knn_params = {
         "n_neighbors": [3, 5, 7, int(np.sqrt(x_train.shape[0]))],
         "weights": ["uniform", "distance"],
+    }
+    svr_params = {
+        "estimator__C": [0.1, 1, 10],
+        "estimator__epsilon": [0.1, 0.2, 0.3],
+        "estimator__kernel": ["linear", "poly", "rbf"],
     }
     decision_tree_params = {"max_depth": [None, 10, 20, 30], "min_samples_split": [2, 5, 10]}
     random_forest_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 20, 30]}
@@ -36,7 +44,10 @@ def main() -> None:
     # Perform grid search for each model
     model_params = [
         linear_reg_params,
+        ridge_params,
+        lasso_params,
         knn_params,
+        svr_params,
         decision_tree_params,
         random_forest_params,
         extra_trees_params,
@@ -45,7 +56,10 @@ def main() -> None:
     ]
     models = [
         LinearRegression(),
+        Ridge(),
+        Lasso(),
         KNeighborsRegressor(),
+        MultiOutputRegressor(SVR()),
         DecisionTreeRegressor(),
         RandomForestRegressor(),
         ExtraTreesRegressor(),
@@ -54,7 +68,10 @@ def main() -> None:
     ]
     model_names = [
         "LinearRegression",
+        "Ridge",
+        "Lasso",
         "KNeighborsRegressor",
+        "MultiOutputRegressor_SVR",
         "DecisionTreeRegressor",
         "RandomForestRegressor",
         "ExtraTreesRegressor",
@@ -63,7 +80,7 @@ def main() -> None:
     ]
 
     grid_search_results = compare_models_with_grid_search_cv(
-        x_train, y_train, x_test, y_test, model_params, models, model_names
+        x_train, y_train, x_test, y_test, model_params[:4], models[:4], model_names[:4]
     )
     print(grid_search_results)
 
