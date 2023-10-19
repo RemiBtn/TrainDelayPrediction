@@ -8,28 +8,28 @@ from sklearn.tree import DecisionTreeRegressor, plot_tree
 
 
 def visualize_regression_weights(
-    X_train: csr_matrix, y_train: csr_matrix, feature_names: list(str), n_coef: int = 10
+    X_train: csr_matrix, y_train: np.array, feature_names: np.array, n_coef: int = 10
 ) -> None:
     reg = LinearRegression()
     reg.fit(X_train, y_train)
 
     coefficients = pd.DataFrame({"feature_name": feature_names, "coef": np.transpose(reg.coef_)})
     coefficients = coefficients.sort_values(by="coef", key=abs, ascending=False)
-    plot_coef(coefficients, feature_names, n_coef)
+    coefficients = coefficients.head(n_coef)
+    plot_coef(coefficients["coef"], coefficients["feature_name"])
 
 
-def plot_coef(coefficients: list[float], features_names: list[str], n_coef: int = 10) -> None:
-    top_coefficients = coefficients.head(n_coef)
+def plot_coef(sorted_coefficients: pd.Series, features_names: pd.Series) -> None:
     plt.figure(figsize=(8, 6))
-    plt.barh(features_names, top_coefficients)
+    plt.barh(features_names, sorted_coefficients)
     plt.xlabel("Coefficient")
     plt.ylabel("Feature")
-    plt.title(f"Top {n_coef} Features by Coefficient Magnitude")
+    plt.title(f"Top {len(features_names)} Features by Coefficient Magnitude")
     plt.show()
 
 
 def visualize_tree_nodes(
-    X_train: csr_matrix, y_train: csr_matrix, feature_names: list[str], n_nodes: int = 3
+    X_train: csr_matrix, y_train: csr_matrix, feature_names: np.array, n_nodes: int = 2
 ) -> None:
     tree = DecisionTreeRegressor()
     tree.fit(X_train, y_train)
