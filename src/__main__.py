@@ -1,5 +1,6 @@
 import numpy as np
 import xgboost as xgb
+from analyses import visualize_regression_weights, visualize_tree_nodes
 from models import compare_models_with_grid_search_cv
 from preprocessing import load_and_process
 from sklearn.ensemble import (
@@ -132,6 +133,14 @@ def main() -> None:
     y_test_pred = reg.predict(x_test)
     rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
     print(f"XGBoost: {rmse_test:.3f}")
+    transformed_dataset, _, feature_names = load_and_process(
+        return_transformers_and_feature_names=True
+    )
+
+    # Quick visualization
+    X_train, y_train, X_test, y_test, _, _ = transformed_dataset
+    visualize_regression_weights(X_train, y_train[:, 0], feature_names)
+    visualize_tree_nodes(X_train, y_train[:, 0], feature_names)
 
 
 if __name__ == "__main__":

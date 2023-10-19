@@ -102,7 +102,8 @@ def number_to_date(x: float) -> str:
 
 def get_data_transformers(
     use_month: bool = True,
-) -> tuple[ColumnTransformer, ColumnTransformer]:
+    return_feature_categories: list[str] = False
+) -> tuple[ColumnTransformer, ColumnTransformer, list[str]]:
     x_categorical_features = ["service", "gare_depart", "gare_arrivee"]
     if use_month:
         x_categorical_features.append("month")
@@ -116,9 +117,7 @@ def get_data_transformers(
         "prct_cause_gestion_gare",
         "prct_cause_prise_en_charge_voyageurs",
     ]
-    date_encoder = FunctionTransformer(
-        date_to_number, number_to_date, check_inverse=False
-    )
+    date_encoder = FunctionTransformer(date_to_number, number_to_date, check_inverse=False)
     percentage_scaler = FunctionTransformer(
         lambda x: x / 100, lambda x: 100 * x, validate=True, accept_sparse=True
     )
@@ -135,7 +134,21 @@ def get_data_transformers(
             ("percentages", percentage_scaler, y_percentage_features),
         ]
     )
-    return x_transformer, y_transformer
+
+    if return_feature_categories:
+        return {
+            "x_transformer": x_transformer,
+            "y_transformer": y_transformer,
+            "x_categorical_features": x_categorical_features,
+            "x_standard_scaled_features": x_standard_scaled_features,
+            "y_standard_scaled_features": y_standard_scaled_features,
+            "y_percentage_features": y_percentage_features
+        }
+
+    return {
+        "x_transformer": x_transformer,
+        "y_transformer": y_transformer
+    }
 
 
 def embedding(
@@ -147,12 +160,10 @@ def embedding(
     y_2023: pd.DataFrame,
     use_month: bool = True,
     *,
-    return_transformers: bool = False,
-) -> (
-    TransformedDataset
-    | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]
-):
-    x_transformer, y_transformer = get_data_transformers(use_month)
+    return_transformers_and_feature_names: bool = False,
+) -> TransformedDataset | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer], list[str]]:
+    data = get_data_transformers(use_month, return_transformers_and_feature_names)
+    x_transformer, y_transformer = data["x_transformer"], data["y_transformer"]
     x_train = x_transformer.fit_transform(x_train)
     y_train = y_transformer.fit_transform(y_train)
     x_test = x_transformer.transform(x_test)
@@ -160,8 +171,19 @@ def embedding(
     x_2023 = x_transformer.transform(x_2023)
     y_2023 = y_transformer.transform(y_2023)
     transformed_dataset = x_train, y_train, x_test, y_test, x_2023, y_2023
-    if return_transformers:
-        return transformed_dataset, (x_transformer, y_transformer)
+
+    if return_transformers_and_feature_names:
+        x_categorical_features = data["x_categorical_features"]
+        x_standard_scaled_features = data["x_standard_scaled_features"]
+        one_hot_feature_names = x_transformer.named_transformers_["categorical"].get_feature_names_out(
+            x_categorical_features
+        )
+        numeric_feature_names = x_standard_scaled_features
+        date_feature_name = ["date"]
+        all_feature_names = np.concatenate(
+            [numeric_feature_names, date_feature_name, one_hot_feature_names]
+        )
+        return transformed_dataset, (x_transformer, y_transformer), all_feature_names
     return transformed_dataset
 
 
@@ -186,9 +208,7 @@ def load_data(
 
 def load_and_split_train_test(
     one_hot_month: bool = True,
-) -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     data_before_2023, data_2023 = load_data(one_hot_month, True)
     months_train, months_test = split_months_train_test(data_before_2023)
     data_train = data_before_2023[data_before_2023["date"].isin(months_train)]
@@ -200,14 +220,9 @@ def load_and_split_train_test(
 
 
 def load_and_process(
-    one_hot_month: bool = True, *, return_transformers: bool = False
-) -> (
-    TransformedDataset
-    | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]
-):
-    x_train, y_train, x_test, y_test, x_2023, y_2023 = load_and_split_train_test(
-        one_hot_month
-    )
+    one_hot_month: bool = True, *, return_transformers_and_feature_names: bool = False
+) -> TransformedDataset | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]:
+    x_train, y_train, x_test, y_test, x_2023, y_2023 = load_and_split_train_test(one_hot_month)
     return embedding(
         x_train,
         y_train,
@@ -216,5 +231,5 @@ def load_and_process(
         x_2023,
         y_2023,
         use_month=one_hot_month,
-        return_transformers=return_transformers,
+        return_transformers_and_feature_names=return_transformers_and_feature_names,
     )
