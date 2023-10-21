@@ -29,15 +29,21 @@ def main() -> None:
     }
     svr_params = {
         "estimator__C": [0.1, 1, 10],
-        "estimator__epsilon": [0.1, 0.2, 0.3],
         "estimator__kernel": ["linear", "poly", "rbf"],
     }
-    decision_tree_params = {"max_depth": [None, 10, 20, 30], "min_samples_split": [2, 5, 10]}
-    random_forest_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 20, 30]}
-    extra_trees_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 20, 30]}
-    ada_boost_params = {"n_estimators": [50, 100, 200], "learning_rate": [0.01, 0.1, 1]}
+    decision_tree_params = {
+        "max_depth": [None, 5, 7, 10, 20, 30, 40, 50, 60],
+        "min_samples_split": [2, 5, 10, 20, 30, 40],
+        "min_samples_leaf": [1, 5, 10, 20, 25, 30, 40, 50],
+    }
+    random_forest_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 30, 50]}
+    extra_trees_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 30, 50]}
+    ada_boost_params = {
+        "estimator__n_estimators": [10, 50, 100, 200],
+        "estimator__learning_rate": [0.01, 0.1, 1],
+    }
     xgb_params = {
-        "n_estimators": [100, 200, 300],
+        "n_estimators": [10, 50, 100, 200, 300],
         "learning_rate": [0.01, 0.1, 0.2],
         "max_depth": [3, 5, 7, 10, 20, 30],
     }
@@ -64,7 +70,7 @@ def main() -> None:
         DecisionTreeRegressor(),
         RandomForestRegressor(),
         ExtraTreesRegressor(),
-        AdaBoostRegressor(),
+        MultiOutputRegressor(AdaBoostRegressor()),
         xgb.XGBRegressor(),
     ]
     model_names = [
@@ -76,7 +82,7 @@ def main() -> None:
         "DecisionTreeRegressor",
         "RandomForestRegressor",
         "ExtraTreesRegressor",
-        "AdaBoostRegressor",
+        "MultiOutputRegressor_AdaBoost",
         "XGBRegressor",
     ]
 
@@ -133,11 +139,11 @@ def main() -> None:
     y_test_pred = reg.predict(x_test)
     rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
     print(f"XGBoost: {rmse_test:.3f}")
+
+    # Quick visualization
     transformed_dataset, _, feature_names = load_and_process(
         return_transformers_and_feature_names=True
     )
-
-    # Quick visualization
     X_train, y_train, X_test, y_test, _, _ = transformed_dataset
     visualize_regression_weights(X_train, y_train[:, 0], feature_names)
     visualize_tree_nodes(X_train, y_train[:, 0], feature_names)
