@@ -1,8 +1,5 @@
 import numpy as np
 import xgboost as xgb
-from analyses import visualize_regression_weights, visualize_tree_nodes
-from models import compare_models_with_grid_search_cv
-from preprocessing import load_and_process
 from sklearn.ensemble import (
     AdaBoostRegressor,
     ExtraTreesRegressor,
@@ -14,6 +11,10 @@ from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
+
+from analyses import visualize_regression_weights, visualize_tree_nodes
+from models import compare_models_with_grid_search_cv
+from preprocessing import load_and_process
 
 
 def main() -> None:
@@ -36,8 +37,14 @@ def main() -> None:
         "min_samples_split": [2, 5, 10, 20, 30, 40],
         "min_samples_leaf": [1, 5, 10, 20, 25, 30, 40, 50],
     }
-    random_forest_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 30, 50]}
-    extra_trees_params = {"n_estimators": [10, 50, 100, 200], "max_depth": [None, 10, 30, 50]}
+    random_forest_params = {
+        "n_estimators": [10, 50, 100, 200],
+        "max_depth": [None, 10, 30, 50],
+    }
+    extra_trees_params = {
+        "n_estimators": [10, 50, 100, 200],
+        "max_depth": [None, 10, 30, 50],
+    }
     ada_boost_params = {
         "estimator__n_estimators": [10, 50, 100, 200],
         "estimator__learning_rate": [0.01, 0.1, 1],
@@ -105,6 +112,13 @@ def main() -> None:
     rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
     print(f"KNN: {rmse_test:.3f}")
 
+    # Quick test with KNN 76
+    reg = KNeighborsRegressor(76)
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"KNN 76: {rmse_test:.3f}")
+
     # Quick test with decision tree
     reg = DecisionTreeRegressor()
     reg.fit(x_train, y_train)
@@ -139,6 +153,17 @@ def main() -> None:
     y_test_pred = reg.predict(x_test)
     rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
     print(f"XGBoost: {rmse_test:.3f}")
+
+    # Quick test with  scaled KNN
+    x_train[:, 2:60] *= 1.33
+    x_test[:, 2:60] *= 1.33
+    x_train[:, 60:118] *= 2
+    x_test[:, 60:118] *= 2
+    reg = KNeighborsRegressor(55)
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"scaled KNN: {rmse_test:.3f}")
 
     # Quick visualization
     transformed_dataset, _, feature_names = load_and_process(

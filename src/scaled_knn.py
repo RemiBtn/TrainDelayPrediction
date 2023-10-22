@@ -26,20 +26,28 @@ def scaled_knn_error(data, departure_scaling, arrival_scaling):
     return total_error / len(data)
 
 
-def same_scale():
-    data = [load_and_process()[:-2] for _ in range(10)]
-    scaling_factors = np.logspace(-0.8, 1, 26, base=10)
-    errors = []
-    for scaling in tqdm.tqdm(scaling_factors):
-        error = scaled_knn_error(data, scaling, scaling)
-        errors.append(error)
-    plt.plot(scaling_factors, errors)
+def main():
+    data = [load_and_process()[:-2] for _ in range(3)]
+    departure_scaling_1d = np.logspace(-0.5, 0.75, 15, base=10)
+    arrival_scaling_1d = np.logspace(-0.5, 0.75, 15, base=10)
+    departure_scaling, arrival_scaling = np.meshgrid(
+        departure_scaling_1d, arrival_scaling_1d
+    )
+    errors = np.zeros_like(departure_scaling)
+    for i, a_scaling in enumerate(tqdm.tqdm(arrival_scaling_1d)):
+        for j, d_scaling in enumerate(departure_scaling_1d):
+            error = scaled_knn_error(data, a_scaling, d_scaling)
+            errors[i, j] = error
+    plt.pcolor(departure_scaling, arrival_scaling, errors)
     plt.xscale("log")
+    plt.yscale("log")
+    plt.xticks(departure_scaling_1d, [f"{x:.2f}" for x in departure_scaling_1d])
+    plt.yticks(departure_scaling_1d, [f"{y:.2f}" for y in arrival_scaling_1d])
+    plt.xlabel("departure scaling")
+    plt.ylabel("arrival scaling")
+    plt.title("KNN average test error")
+    plt.colorbar()
     plt.show()
-
-
-def main() -> None:
-    same_scale()
 
 
 if __name__ == "__main__":
