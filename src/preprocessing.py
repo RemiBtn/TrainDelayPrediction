@@ -1,3 +1,4 @@
+import math
 import os
 import random
 from typing import TypeAlias
@@ -6,6 +7,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.compose import ColumnTransformer
+from sklearn.metrics.pairwise import haversine_distances
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
@@ -18,6 +20,34 @@ np.random.seed(RANDOM_STATE)
 TransformedDataset: TypeAlias = tuple[
     csr_matrix, csr_matrix, csr_matrix, csr_matrix, csr_matrix, csr_matrix
 ]
+
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Radius of the Earth in km
+    R = 6371.0
+
+    # Convert latitude and longitude from degrees to radians
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
+
+    # Compute the differences between latitudes and longitudes
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    # Haversine formula
+    a = (
+        math.sin(dlat / 2) ** 2
+        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    )
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    # Calculate the distance
+    distance = R * c
+    if math.isnan(distance):
+        print(lat1, lon1, lat2, lon2)
+    return distance
 
 
 def split_months_train_test(
@@ -44,6 +74,11 @@ def split_explicative_target(
         "gare_arrivee",
         "duree_moyenne",
         "nb_train_prevu",
+        "Longitude_gare_depart",
+        "Lattitude_gare_depart",
+        "Longitude_gare_arrivee",
+        "Lattitude_gare_arrivee",
+        "distance",
     ]
     target_columns = [
         "retard_moyen_arrivee",
@@ -106,7 +141,15 @@ def get_data_transformers(
     x_categorical_features = ["service", "gare_depart", "gare_arrivee"]
     if use_month:
         x_categorical_features.append("month")
-    x_standard_scaled_features = ["duree_moyenne", "nb_train_prevu"]
+    x_standard_scaled_features = [
+        "duree_moyenne",
+        "nb_train_prevu",
+        "Longitude_gare_depart",
+        "Lattitude_gare_depart",
+        "Longitude_gare_arrivee",
+        "Lattitude_gare_arrivee",
+        "distance",
+    ]
     y_standard_scaled_features = ["retard_moyen_arrivee"]
     y_percentage_features = [
         "prct_cause_externe",
@@ -188,16 +231,51 @@ def embedding(
     return transformed_dataset
 
 
+def fill_missing_coordinates(data: pd.DataFrame) -> None:
+    city_coordinates = {
+        "BARCELONA": (41.3851, 2.1734),
+        "FRANCFORT": (50.1109, 8.6821),
+        "GENEVE": (46.2044, 6.1432),
+        "ITALIE": (45.0703, 7.6869),
+        "LAUSANNE": (46.5197, 6.6323),
+        "MADRID": (40.4168, -3.7038),
+        "STUTTGART": (48.7758, 9.1829),
+        "VALENCE TGV RHÔNES-ALPES SUD": (44.9334, 4.8922),
+        "ZURICH": (47.3769, 8.5417),
+    }
+    for index, row in data.iterrows():
+        if row["gare_depart"] in city_coordinates:
+            (
+                data.at[index, "Lattitude_gare_depart"],
+                data.at[index, "Longitude_gare_depart"],
+            ) = city_coordinates[row["gare_depart"]]
+        if row["gare_arrivee"] in city_coordinates:
+            (
+                data.at[index, "Lattitude_gare_arrivee"],
+                data.at[index, "Longitude_gare_arrivee"],
+            ) = city_coordinates[row["gare_arrivee"]]
+
+
 def load_data(
     add_month: bool = False, split_2023: bool = False
 ) -> pd.DataFrame | tuple[pd.DataFrame, pd.DataFrame]:
-    if os.path.exists("../data/regularite-mensuelle-tgv-aqst.csv"):
-        filepath = "../data/regularite-mensuelle-tgv-aqst.csv"
-    elif os.path.exists("./data/regularite-mensuelle-tgv-aqst.csv"):
-        filepath = "./data/regularite-mensuelle-tgv-aqst.csv"
-    else:
-        raise FileNotFoundError('Could not find "regularite-mensuelle-tgv-aqst.csv".')
-    data = pd.read_csv(filepath, delimiter=";")
+    filename = "regularite-mensuelle-tgv-ext-data.csv"
+    filepath = f"data/{filename}"
+    if not os.path.exists(filepath):
+        filepath = "../" + filepath
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f'Could not find "{filename}".')
+    data = pd.read_csv(filepath, delimiter=",")
+    fill_missing_coordinates(data)
+    data["distance"] = data.apply(
+        lambda row: haversine(
+            row["Lattitude_gare_depart"],
+            row["Longitude_gare_depart"],
+            row["Lattitude_gare_arrivee"],
+            row["Longitude_gare_arrivee"],
+        ),
+        axis=1,
+    )
     if add_month:
         data["month"] = data.apply(lambda row: row["date"][-2:], axis=1)
     if split_2023:
