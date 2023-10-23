@@ -7,12 +7,11 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.compose import ColumnTransformer
-from sklearn.metrics.pairwise import haversine_distances
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 # Fixing randomness to get reproducible results
-RANDOM_STATE = 42
+RANDOM_STATE = 38
 random.seed(RANDOM_STATE)
 np.random.seed(RANDOM_STATE)
 
