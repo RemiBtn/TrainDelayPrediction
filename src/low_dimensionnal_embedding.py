@@ -15,7 +15,7 @@ from preprocessing import (
 )
 
 # Fixing randomness to get reproducible results
-RANDOM_STATE = 38
+RANDOM_STATE = 42
 random.seed(RANDOM_STATE)
 np.random.seed(RANDOM_STATE)
 

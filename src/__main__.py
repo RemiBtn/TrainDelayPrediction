@@ -13,8 +13,67 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 
 from analyses import visualize_regression_weights, visualize_tree_nodes
+from low_dimensionnal_embedding import LowDimDataset
 from models import compare_models_with_grid_search_cv
 from preprocessing import load_and_process
+
+
+def simple_model_test(x_train, y_train, x_test, y_test):
+    # Quick test with linear regression
+    reg = LinearRegression()
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"Linear regression: {rmse_test:.3f}")
+
+    # Quick test with KNN
+    reg = KNeighborsRegressor()
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"KNN: {rmse_test:.3f}")
+
+    # Quick test with KNN 75
+    reg = KNeighborsRegressor(75)
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"KNN 75: {rmse_test:.3f}")
+
+    # Quick test with decision tree
+    reg = DecisionTreeRegressor()
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"decision tree: {rmse_test:.3f}")
+
+    # Quick test with random forest
+    reg = RandomForestRegressor()
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"Random forest: {rmse_test:.3f}")
+
+    # Quick test with extremely randomized trees
+    reg = ExtraTreesRegressor().fit(x_train, y_train)
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"Extremely randomized trees: {rmse_test:.3f}")
+
+    # Quick test with AdaBoost
+    reg = MultiOutputRegressor(AdaBoostRegressor())
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"AdaBoost: {rmse_test:.3f}")
+
+    # Quick test with XGBoost
+    reg = xgb.XGBRegressor()
+    reg.fit(x_train, y_train)
+    y_test_pred = reg.predict(x_test)
+    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
+    print(f"XGBoost: {rmse_test:.3f}")
 
 
 def main() -> None:
@@ -98,61 +157,7 @@ def main() -> None:
     )
     print(grid_search_results)
 
-    # Quick test with linear regression
-    reg = LinearRegression()
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"Linear regression: {rmse_test:.3f}")
-
-    # Quick test with KNN
-    reg = KNeighborsRegressor()
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"KNN: {rmse_test:.3f}")
-
-    # Quick test with KNN 76
-    reg = KNeighborsRegressor(76)
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"KNN 76: {rmse_test:.3f}")
-
-    # Quick test with decision tree
-    reg = DecisionTreeRegressor()
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"decision tree: {rmse_test:.3f}")
-
-    # Quick test with random forest
-    reg = RandomForestRegressor()
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"Random forest: {rmse_test:.3f}")
-
-    # Quick test with extremely randomized trees
-    reg = ExtraTreesRegressor().fit(x_train, y_train)
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"Extremely randomized trees: {rmse_test:.3f}")
-
-    # Quick test with AdaBoost
-    reg = MultiOutputRegressor(AdaBoostRegressor())
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"AdaBoost: {rmse_test:.3f}")
-
-    # Quick test with XGBoost
-    reg = xgb.XGBRegressor()
-    reg.fit(x_train, y_train)
-    y_test_pred = reg.predict(x_test)
-    rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
-    print(f"XGBoost: {rmse_test:.3f}")
+    simple_model_test(x_train, y_train, x_test, y_test)
 
     # Quick test with  scaled KNN
     x_train[:, 2:60] *= 1.33
@@ -164,6 +169,11 @@ def main() -> None:
     y_test_pred = reg.predict(x_test)
     rmse_test = np.sqrt(mean_squared_error(y_true=y_test, y_pred=y_test_pred))
     print(f"scaled KNN: {rmse_test:.3f}")
+
+    print("--------------------------------")
+    print("Using low dimensional dataset")
+    x_train, y_train, x_test, y_test, _, _ = LowDimDataset().get_train_test_split()
+    simple_model_test(x_train, y_train, x_test, y_test)
 
     # Quick visualization
     transformed_dataset, _, feature_names = load_and_process(
