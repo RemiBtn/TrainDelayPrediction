@@ -1,12 +1,13 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from preprocessing import load_and_process
 from scipy.sparse import csr_matrix
 from sklearn.base import ClassifierMixin, RegressorMixin
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from tqdm import tqdm
+
+from preprocessing import load_and_process
 
 
 def perform_grid_search_cv(
@@ -16,7 +17,7 @@ def perform_grid_search_cv(
     param_grid: dict[str, list[float | int]],
     cv: int = 5,
 ) -> RegressorMixin | ClassifierMixin:
-    grid_search = GridSearchCV(model, param_grid=param_grid, cv=cv)
+    grid_search = GridSearchCV(model, param_grid=param_grid, cv=cv, n_jobs=-1)
     grid_search.fit(X, y)
     return grid_search.best_estimator_
 
@@ -36,7 +37,9 @@ def compare_models_with_grid_search_cv(
     for model, model_name, param_grid in tqdm(zip(models, model_names, model_params)):
         best_model = perform_grid_search_cv(model, x_train, y_train, param_grid)
         score = best_model.score(x_test, y_test)  # R^2
-        rmse = np.sqrt(mean_squared_error(y_true=y_test, y_pred=best_model.predict(x_test)))
+        rmse = np.sqrt(
+            mean_squared_error(y_true=y_test, y_pred=best_model.predict(x_test))
+        )
         results.append(
             {
                 "Model": model_name,

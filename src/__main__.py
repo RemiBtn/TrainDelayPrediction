@@ -77,14 +77,14 @@ def simple_model_test(x_train, y_train, x_test, y_test):
 
 
 def main() -> None:
-    x_train, y_train, x_test, y_test, _, _ = load_and_process()
+    x_train, y_train, x_test, y_test, _, _ = LowDimDataset().get_train_test_split()
 
     # Define the parameter grids
     linear_reg_params = {"fit_intercept": [True, False]}
     ridge_params = {"alpha": [0.1, 1.0, 10.0]}
     lasso_params = {"alpha": [0.1, 1.0, 10.0]}
     knn_params = {
-        "n_neighbors": [3, 5, 7, int(np.sqrt(x_train.shape[0]))],
+        "n_neighbors": list(range(10, 101, 5)),
         "weights": ["uniform", "distance"],
     }
     svr_params = {
@@ -153,7 +153,7 @@ def main() -> None:
     ]
 
     grid_search_results = compare_models_with_grid_search_cv(
-        x_train, y_train, x_test, y_test, model_params[:4], models[:4], model_names[:4]
+        x_train, y_train, x_test, y_test, model_params, models, model_names
     )
     print(grid_search_results)
 

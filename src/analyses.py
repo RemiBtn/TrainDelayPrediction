@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from preprocessing import load_and_process
 from scipy.sparse import csr_matrix
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor, plot_tree
+
+from preprocessing import load_and_process
 
 
 def visualize_regression_weights(
@@ -13,7 +14,9 @@ def visualize_regression_weights(
     reg = LinearRegression()
     reg.fit(X_train, y_train)
 
-    coefficients = pd.DataFrame({"feature_name": feature_names, "coef": np.transpose(reg.coef_)})
+    coefficients = pd.DataFrame(
+        {"feature_name": feature_names, "coef": np.transpose(reg.coef_)}
+    )
     coefficients = coefficients.sort_values(by="coef", key=abs, ascending=False)
     coefficients = coefficients.head(n_coef)
     plot_coef(coefficients["coef"], coefficients["feature_name"])
