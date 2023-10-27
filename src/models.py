@@ -34,7 +34,10 @@ def compare_models_with_grid_search_cv(
 ) -> pd.DataFrame:
     """Perform grid search with cross validation on different models and return the results in a DataFrame."""
     results = []
-    for model, model_name, param_grid in tqdm(zip(models, model_names, model_params)):
+    for model, model_name, param_grid in zip(
+        models, (progress_bar := tqdm(model_names)), model_params
+    ):
+        progress_bar.set_postfix_str(model_name)
         best_model = perform_grid_search_cv(model, x_train, y_train, param_grid)
         score = best_model.score(x_test, y_test)  # R^2
         rmse = np.sqrt(
