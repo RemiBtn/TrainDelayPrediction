@@ -77,6 +77,7 @@ def simple_model_test(x_train, y_train, x_test, y_test):
 
 
 def main() -> None:
+    # x_train, y_train, x_test, y_test, _, _ = load_and_process()
     x_train, y_train, x_test, y_test, _, _ = LowDimDataset().get_train_test_split()
 
     # Define the parameter grids
