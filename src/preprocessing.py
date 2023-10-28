@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
 from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
 # Fixing randomness to get reproducible results
@@ -36,10 +35,7 @@ def haversine(lat1, lon1, lat2, lon2):
     dlat = lat2 - lat1
 
     # Haversine formula
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    )
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     # Calculate the distance
@@ -134,9 +130,7 @@ def number_to_date(x: float) -> str:
     return f"{year}-{month:02d}"
 
 
-def get_data_transformers(
-    use_month: bool = True, return_feature_categories: bool = False
-) -> dict:
+def get_data_transformers(use_month: bool = True, return_feature_categories: bool = False) -> dict:
     x_categorical_features = ["service", "gare_depart", "gare_arrivee"]
     if use_month:
         x_categorical_features.append("month")
@@ -158,9 +152,7 @@ def get_data_transformers(
         "prct_cause_gestion_gare",
         "prct_cause_prise_en_charge_voyageurs",
     ]
-    date_encoder = FunctionTransformer(
-        date_to_number, number_to_date, check_inverse=False
-    )
+    date_encoder = FunctionTransformer(date_to_number, number_to_date, check_inverse=False)
     percentage_scaler = FunctionTransformer(
         lambda x: x / 100, lambda x: 100 * x, validate=True, accept_sparse=True
     )
@@ -286,9 +278,7 @@ def load_data(
 
 def load_and_split_train_test(
     one_hot_month: bool = True,
-) -> tuple[
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
-]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     data_before_2023, data_2023 = load_data(one_hot_month, True)
     months_train, months_test = split_months_train_test(data_before_2023)
     data_train = data_before_2023[data_before_2023["date"].isin(months_train)]
@@ -301,13 +291,8 @@ def load_and_split_train_test(
 
 def load_and_process(
     one_hot_month: bool = True, *, return_transformers_and_feature_names: bool = False
-) -> (
-    TransformedDataset
-    | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]
-):
-    x_train, y_train, x_test, y_test, x_2023, y_2023 = load_and_split_train_test(
-        one_hot_month
-    )
+) -> TransformedDataset | tuple[TransformedDataset, tuple[ColumnTransformer, ColumnTransformer]]:
+    x_train, y_train, x_test, y_test, x_2023, y_2023 = load_and_split_train_test(one_hot_month)
     return embedding(
         x_train,
         y_train,

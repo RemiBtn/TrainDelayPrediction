@@ -7,8 +7,6 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV
 from tqdm import tqdm
 
-from preprocessing import load_and_process
-
 
 def perform_grid_search_cv(
     model: RegressorMixin | ClassifierMixin,
@@ -40,9 +38,7 @@ def compare_models_with_grid_search_cv(
         progress_bar.set_postfix_str(model_name)
         best_model = perform_grid_search_cv(model, x_train, y_train, param_grid)
         score = best_model.score(x_test, y_test)  # R^2
-        rmse = np.sqrt(
-            mean_squared_error(y_true=y_test, y_pred=best_model.predict(x_test))
-        )
+        rmse = np.sqrt(mean_squared_error(y_true=y_test, y_pred=best_model.predict(x_test)))
         results.append(
             {
                 "Model": model_name,
